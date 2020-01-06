@@ -12,7 +12,7 @@ items:
       data: 
         collisionDetection: false
         collisionDetector: AISTCollisionDetector
-        materialTableFile: "/home/taiki/wrs_ws/devel/bin/../share/choreonoid-1.8/default/materials.yaml"
+        materialTableFile: "${SHARE}/default/materials.yaml"
       children: 
         - 
           id: 2
@@ -20,7 +20,7 @@ items:
           plugin: Body
           class: BodyItem
           data: 
-            modelFile: "/home/taiki/wrs_ws/src/quadcopter/model/quadcopter_light.body"
+            modelFile: "../model/quadcopter_light.body"
             currentBaseLink: "BODY"
             rootPosition: [ -1.55410793e-07, -1.00120746e-07, 0.114890723 ]
             rootAttitude: [ 
@@ -74,8 +74,8 @@ items:
               data: 
                 isNoDelayMode: false
                 controllerOptions: ""
-                controller: "/home/taiki/wrs_ws/devel/lib/choreonoid-1.8/simplecontroller/LightControllerWRS.so"
-                baseDirectory: "None"
+                controller: "LightControllerWRS"
+                baseDirectory: "Controller directory"
                 reloading: false
                 exportSymbols: false
                 isOldTargetVariableMode: false
@@ -85,7 +85,7 @@ items:
           plugin: Body
           class: BodyItem
           data: 
-            modelFile: "/home/taiki/wrs_ws/devel/bin/../share/choreonoid-1.8/model/misc/floor.body"
+            modelFile: "${SHARE}/model/misc/floor.body"
             currentBaseLink: "Floor"
             rootPosition: [ 0, 0, -0.1 ]
             rootAttitude: [ 
