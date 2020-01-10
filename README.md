@@ -27,7 +27,7 @@ cd ~/<catkin_ws>/src/quadcopter/cnoid
 ## シンプルコントローラの単体でのコンパイル(試したいひと)
 [コントローラのビルド](https://choreonoid.org/ja/manuals/latest/simulation/howto-build-controller.html)を参考にMakefileを作成した
 ```sh
-cd ~/<catkin_ws>/src/quadcopter/simplecontroller_sample
+cd ~/<catkin_ws>/src/quadcopter/sample/simplecontroller
 make
 make install
 ```
