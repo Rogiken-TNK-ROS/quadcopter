@@ -1,13 +1,14 @@
 # quadcopter
-開発の規約は以下に従う(2020/01/10)
-[議事録:第1回2019-08-21](https://wrs2020.esa.io/posts/5)より
+開発にあたって規約は以下に従う(2020/01/10)  
+[議事録:第1回2019-08-21](https://wrs2020.esa.io/posts/5)より  
+
 git
 - master
     - hotfix/fuga
     - develop　 -> master へのマージは絶対レビュー通過したコードしか入れない
 - develop
     - feature/hoge
-    - feature/hoge -> develop　は
+    - feature/hoge -> develop　は  
     Build, 実行ができていれば各自自由にPR->マージして良い(gitlabだとmerge request?)
 
 ## quadcopterリポジトリ
@@ -26,7 +27,7 @@ cd ~/<catkin_ws>/src/quadcopter/cnoid
 ## シンプルコントローラの単体でのコンパイル(試したいひと)
 [コントローラのビルド](https://choreonoid.org/ja/manuals/latest/simulation/howto-build-controller.html)を参考にMakefileを作成した
 ```sh
-cd ~/<catkin_ws>/src/quadcopter/simplecontroller_sample
+cd ~/<catkin_ws>/src/quadcopter/sample/simplecontroller
 make
 make install
 ```
