@@ -23,6 +23,24 @@ cp choreonoid/src/MulticopterPlugin/exportdecl.h ../devel/include/choreonoid-1.8
 cd ~/<catkin_ws>/src/quadcopter/cnoid
  choreonoid QuadcopterJoystickWRS.cnoid
 ```
+DUALSHOCK 4 (PS4コントローラ) での操作を想定.
+
+- Xボタンでロータ始動
+- 左スティック上下で上昇/下降
+- 左スティック左右でヨー軸
+- 右スティックで移動
+- 右スティック放すとホバリング
+- 十字キー上下でカメラのピッチ軸
+- ○ボタンでカメラ2ズームイン/□ボタンでカメラ2ズームアウト/△ボタンでカメラ2リセット
+- R1ボタンで加速度センサ/ジャイロセンサ/デプスセンサでマッピング
+
+ROSのtopic
+1. /quadcopter/camera_image
+カメラ2の画像:sensor_msgs/Image型
+2. /quadcopter/quadcopter_pose
+ロボットの位置姿勢：geometry_msgs/Pose型
+3. /quadcopter/output
+(Rogikeの名残：[参考](https://wrs2020.esa.io/posts/21))
 
 ## シンプルコントローラの単体でのコンパイル(試したいひと)
 [コントローラのビルド](https://choreonoid.org/ja/manuals/latest/simulation/howto-build-controller.html)を参考にMakefileを作成した

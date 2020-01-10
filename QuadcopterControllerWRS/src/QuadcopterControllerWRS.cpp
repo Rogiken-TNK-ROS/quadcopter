@@ -117,7 +117,7 @@ bool QuadcopterControllerWRS::initialize(SimpleControllerIO* io) {
   io->enableInput(ioBody->rootLink(), LINK_POSITION);
 
   imu_manager.init("AccelerationSensor", "RateGyroSensor", io, timeStep,
-                   node.advertise<geometry_msgs::Pose>("quadcopter_pose", 10));
+                   node.advertise<geometry_msgs::Pose>("/quadcopter/quadcopter_pose", 10));
   imu_debugger.init(ioBody, timeStep);
   imu_manager.set(imu_debugger.get());
 
@@ -157,7 +157,7 @@ bool QuadcopterControllerWRS::initialize(SimpleControllerIO* io) {
   cam->on(true);
   cam->notifyStateChange();
 
-  pub = node.advertise<PointCloud>("output", 10);
+  pub = node.advertise<PointCloud>("/quadcopter/output", 10);
   msg = PointCloud::Ptr(new PointCloud);
   msg->header.frame_id = "WRS";
 
