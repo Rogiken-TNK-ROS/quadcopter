@@ -25,7 +25,7 @@ public:
         io->enableInput(camera2);
 
         ros::NodeHandle n_;
-        camera_image_pub_ = n_.advertise<sensor_msgs::Image>("camera_image", 1);
+        camera_image_pub_ = n_.advertise<sensor_msgs::Image>("/quadcopter/camera_image", 1);
 
         return true;
     }
