@@ -379,10 +379,11 @@ bool QuadcopterController::control() {
                          ddxy;  // -yawの回転行列 * xy加速度ベクトル
                                 // (現在のbodyの向きに合わせた座標軸での加速度)
 
-    // printf("diff_x: %+8.6f, %+8.6f, %+8.6f,\t%+8.6f, %+8.6f, %+8.6f\n",
-    // xy[0]-xyz_[0], xy[1]-xyz_[1], zrpy[0]-xyz_[2], xy[0], xy[1], zrpy[0]);
-    // printf("diff: %+8.6f, %+8.6f, %+8.6f\n\n", zrpy[1]-mod[0],
-    // zrpy[2]-mod[1], zrpy[3]-mod[2]);
+    printf("diff_x: %+8.6f, %+8.6f, %+8.6f,\t%+8.6f, %+8.6f, %+8.6f\n",
+           xy[0] - xyz_[0], xy[1] - xyz_[1], zrpy[0] - xyz_[2], xy[0], xy[1],
+           zrpy[0]);
+    printf("diff: %+8.6f, %+8.6f, %+8.6f\n\n", zrpy[1] - mod[0],
+           zrpy[2] - mod[1], zrpy[3] - mod[2]);
 
     //以下、加速度センサの値使用
     // Vector2 ddxy_local = Vector2(dv[0], dv[1]);
