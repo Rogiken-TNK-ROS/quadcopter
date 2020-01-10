@@ -59,6 +59,19 @@ items:
                 keepRelativeAttitude: false
                 nearClipDistance: 0.01
                 farClipDistance: 100
+            - 
+              id: 5
+              name: "CameraController"
+              plugin: Body
+              class: SimpleControllerItem
+              data: 
+                isNoDelayMode: false
+                controllerOptions: ""
+                controller: "CameraController"
+                baseDirectory: "Controller directory"
+                reloading: false
+                exportSymbols: false
+                isOldTargetVariableMode: false
         -
           id: 5
           name: "Floor"
