@@ -286,9 +286,9 @@ bool QuadcopterControllerWRS::control() {
       // ここdirで片側2つを-1倍してるのはモーメントの計算のために力をすべて同じ回転方向で考えていたからかな?
     }
 
-     if (joystick->getButtonState(targetMode, Joystick::R_BUTTON)) {
+//     if (joystick->getButtonState(targetMode, Joystick::R_BUTTON)) {
         rgbd_camera_manager_.publishCloud(ioBody,cameraT,imu_manager,timeStep);
-     }
+//     }
   }
 //  rgbd_camera_manager_.publishCloud(ioBody,cameraT,imu_manager,timeStep);
 
