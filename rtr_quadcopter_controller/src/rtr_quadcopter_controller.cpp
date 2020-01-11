@@ -24,6 +24,8 @@
 #include "imu_filter.h"
 #include "imu_manager.hpp"
 
+#include "rgbd_camera.hpp"
+
 using namespace cnoid;
 
 namespace {
@@ -59,9 +61,9 @@ constexpr double KPX[] = {0.4, 0.4};
 constexpr double KDX[] = {0.4, 0.4};
 constexpr double RATEX[] = {-1.0, -1.0};
 
-using PointCloud = pcl::PointCloud<pcl::PointXYZ>;
+//using PointCloud = pcl::PointCloud<pcl::PointXYZ>;
 
-class RTRQuadcopterController : public SimpleController {
+class QuadcopterControllerWRS : public SimpleController {
  public:
   SharedJoystickPtr joystick;
   int targetMode;
@@ -86,13 +88,11 @@ class RTRQuadcopterController : public SimpleController {
   bool rotorswitch;
 
   virtual bool initialize(SimpleControllerIO* io) override;
-  void calcPoint();
   virtual bool control() override;
 
-  RangeCamera* cam;
   ros::NodeHandle node;
-  ros::Publisher pub;
-  PointCloud::Ptr msg;
+
+  rgbd_camera::RGBDCameraManager rgbd_camera_manager_;
 
   Vector3d offset;
 
@@ -110,7 +110,7 @@ class RTRQuadcopterController : public SimpleController {
 
 }  // namespace
 
-bool RTRQuadcopterController::initialize(SimpleControllerIO* io) {
+bool QuadcopterControllerWRS::initialize(SimpleControllerIO* io) {
   ioBody = io->body();
   os = &io->os();
   timeStep = io->timeStep();
@@ -152,14 +152,8 @@ bool RTRQuadcopterController::initialize(SimpleControllerIO* io) {
   targetMode = joystick->addMode();
   rotorswitch = false;
 
-  cam = ioBody->findDevice<RangeCamera>("Camera");
-  io->enableInput(cam);
-  cam->on(true);
-  cam->notifyStateChange();
-
-  pub = node.advertise<PointCloud>("/quadcopter/output", 10);
-  msg = PointCloud::Ptr(new PointCloud);
-  msg->header.frame_id = "WRS";
+  rgbd_camera_manager_.initCnoidDevice("Camera",io);
+  rgbd_camera_manager_.initROS("/quadcopter/cloud",node);
 
   axis1 << 1, 0, 0;
   offset << 0, 0, 0.05;
@@ -170,45 +164,8 @@ bool RTRQuadcopterController::initialize(SimpleControllerIO* io) {
   return true;
 }
 
-void RTRQuadcopterController::calcPoint() {
-  static int count = 0;
-  if (count++ * timeStep < 0.8) {
-    return;
-  }
 
-  count = 0;
-
-  auto p = cam->points();
-  const auto q = cameraT->q();
-
-  msg->points.clear();
-  msg->points.reserve(p.size());
-
-  AxisAngle1 = AngleAxisd(M_PI / 2 + q, axis1);
-  const auto [xyz, dxyz, ddxyz, rpy, drpy, ddrpy] = imu_manager.get();
-  Matrix3 rot = rotFromRpy(rpy);
-  for (const auto& z : p) {
-    const auto norm = z.norm();
-    if (!isinf(norm) && !isnan(norm)) {
-      Vector3d poi;
-      poi << z[0], z[1], z[2] + 0.03;
-
-      const Vector3d relative = AxisAngle1 * poi + offset;
-      if (0 < relative[2]) {
-        continue;
-      }
-      const Vector3d point = rot * mirror_xy * AxisAngle2 * relative + xyz;
-      msg->points.push_back(pcl::PointXYZ(point[0], point[1], point[2]));
-    }
-  }
-  msg->height = msg->points.size();
-  msg->width = 1;
-  printf("pcl_size: %lu\n", msg->points.size());
-
-  pub.publish(msg);
-}
-
-bool RTRQuadcopterController::control() {
+bool QuadcopterControllerWRS::control() {
   joystick->updateState(targetMode);  // ジョイコンのための謎の処理
 
   if (wait_camera == 0 || 20 < wait_camera) {
@@ -329,10 +286,11 @@ bool RTRQuadcopterController::control() {
       // ここdirで片側2つを-1倍してるのはモーメントの計算のために力をすべて同じ回転方向で考えていたからかな?
     }
 
-    if (joystick->getButtonState(targetMode, Joystick::R_BUTTON)) {
-      calcPoint();
-    }
+     if (joystick->getButtonState(targetMode, Joystick::R_BUTTON)) {
+        rgbd_camera_manager_.publishCloud(ioBody,cameraT,imu_manager,timeStep);
+     }
   }
+//  rgbd_camera_manager_.publishCloud(ioBody,cameraT,imu_manager,timeStep);
 
   for (int i = 0; i < 4; ++i) {
     double tau = torque[i];
@@ -395,4 +353,4 @@ bool RTRQuadcopterController::control() {
   return true;
 }
 
-CNOID_IMPLEMENT_SIMPLE_CONTROLLER_FACTORY(RTRQuadcopterController)
+CNOID_IMPLEMENT_SIMPLE_CONTROLLER_FACTORY(QuadcopterControllerWRS)
