@@ -287,7 +287,7 @@ bool QuadcopterControllerWRS::control() {
     }
 
 //     if (joystick->getButtonState(targetMode, Joystick::R_BUTTON)) {
-        rgbd_camera_manager_.publishCloud(ioBody,cameraT,imu_manager,timeStep);
+        rgbd_camera_manager_.publishCloud(ioBody,cameraT,&imu_manager,timeStep);
 //     }
   }
 //  rgbd_camera_manager_.publishCloud(ioBody,cameraT,imu_manager,timeStep);
