@@ -260,7 +260,6 @@ void ImuFilter::madgwickAHRSupdateIMU(
     float ax, float ay, float az,
     float dt)
 {
-  float recipNorm;
   float s0, s1, s2, s3;
   float qDot1, qDot2, qDot3, qDot4;
 
