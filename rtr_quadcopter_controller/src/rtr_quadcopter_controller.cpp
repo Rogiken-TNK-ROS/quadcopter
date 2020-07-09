@@ -178,10 +178,6 @@ void QuadcopterControllerWRS::calcPoint() {
 
   count = 0;
 
-  auto root = ioBody->rootLink()->position().translation();
-  auto camera =
-      ioBody->findDevice<Camera>("Camera")->link()->position().translation();
-
   auto p = cam->points();
   const auto q = cameraT->q();
 
