@@ -15,10 +15,10 @@ find_package(catkin REQUIRED COMPONENTS
   choreonoid
   pcl_ros
   #choreonoid_rosplugin
-  )
+)
 
 include_directories(
-  ./include
+  include
   ${catkin_INCLUDE_DIRS}
   ${CHOREONOID_INCLUDE_DIRS}
   ${CNOID_PLUGIN_INCLUDE_DIRS}
