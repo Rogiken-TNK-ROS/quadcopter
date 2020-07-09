@@ -207,7 +207,7 @@ void QuadcopterControllerWRS::calcPoint() {
   }
   msg->height = msg->points.size();
   msg->width = 1;
-  printf("pcl_size: %d\n", msg->points.size());
+  printf("pcl_size: %lu\n", msg->points.size());
 
   pub.publish(msg);
 }
