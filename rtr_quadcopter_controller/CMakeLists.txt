@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5.0)
-project(QuadcopterControllerWRS)
+project(rtr_quadcopter_controller)
 
 add_compile_options(-std=c++17 -O3 -Wall -Wextra)
 
@@ -14,7 +14,6 @@ find_package(catkin REQUIRED COMPONENTS
   trajectory_msgs
   choreonoid
   pcl_ros
-  #choreonoid_rosplugin
 )
 
 include_directories(
