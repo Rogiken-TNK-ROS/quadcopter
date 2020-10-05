@@ -36,7 +36,7 @@ function(add_cnoid_simple_controller)
   set(target ${ARGV0})
   list(REMOVE_AT ARGV 0)
   add_library(${target} SHARED ${ARGV})
-  target_link_libraries(${target} ${catkin_LIBRARIES} ${CHOREONOID_BODY_LIBRARIES})
+  target_link_libraries(${target} ${catkin_LIBRARIES} ${CHOREONOID_BODY_LIBRARIES} CnoidMulticopterPlugin)
   set_target_properties(${target} PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY ${CHOREONOID_PLUGIN_SUBDIR}/simplecontroller PREFIX "")
   install(TARGETS ${target} LIBRARY DESTINATION ${CHOREONOID_PLUGIN_SUBDIR}/simplecontroller)
