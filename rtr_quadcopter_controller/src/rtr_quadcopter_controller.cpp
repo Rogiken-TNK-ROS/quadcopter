@@ -61,7 +61,7 @@ constexpr double RATEX[] = {-1.0, -1.0};
 
 using PointCloud = pcl::PointCloud<pcl::PointXYZ>;
 
-class QuadcopterControllerWRS : public SimpleController {
+class RTRQuadcopterController : public SimpleController {
  public:
   SharedJoystickPtr joystick;
   int targetMode;
@@ -110,7 +110,7 @@ class QuadcopterControllerWRS : public SimpleController {
 
 }  // namespace
 
-bool QuadcopterControllerWRS::initialize(SimpleControllerIO* io) {
+bool RTRQuadcopterController::initialize(SimpleControllerIO* io) {
   ioBody = io->body();
   os = &io->os();
   timeStep = io->timeStep();
@@ -170,17 +170,13 @@ bool QuadcopterControllerWRS::initialize(SimpleControllerIO* io) {
   return true;
 }
 
-void QuadcopterControllerWRS::calcPoint() {
+void RTRQuadcopterController::calcPoint() {
   static int count = 0;
   if (count++ * timeStep < 0.8) {
     return;
   }
 
   count = 0;
-
-  auto root = ioBody->rootLink()->position().translation();
-  auto camera =
-      ioBody->findDevice<Camera>("Camera")->link()->position().translation();
 
   auto p = cam->points();
   const auto q = cameraT->q();
@@ -207,12 +203,12 @@ void QuadcopterControllerWRS::calcPoint() {
   }
   msg->height = msg->points.size();
   msg->width = 1;
-  printf("pcl_size: %d\n", msg->points.size());
+  printf("pcl_size: %lu\n", msg->points.size());
 
   pub.publish(msg);
 }
 
-bool QuadcopterControllerWRS::control() {
+bool RTRQuadcopterController::control() {
   joystick->updateState(targetMode);  // ジョイコンのための謎の処理
 
   if (wait_camera == 0 || 20 < wait_camera) {
@@ -399,4 +395,4 @@ bool QuadcopterControllerWRS::control() {
   return true;
 }
 
-CNOID_IMPLEMENT_SIMPLE_CONTROLLER_FACTORY(QuadcopterControllerWRS)
+CNOID_IMPLEMENT_SIMPLE_CONTROLLER_FACTORY(RTRQuadcopterController)

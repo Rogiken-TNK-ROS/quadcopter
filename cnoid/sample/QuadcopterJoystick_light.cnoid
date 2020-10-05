@@ -49,7 +49,7 @@ items:
               data: 
                 isNoDelayMode: false
                 controllerOptions: ""
-                controller: "QuadcopterControllerWRS"
+                controller: "RTRQuadcopterController"
                 baseDirectory: "Controller directory"
                 reloading: false
                 exportSymbols: false
