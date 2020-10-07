@@ -297,7 +297,7 @@ bool RTRQuadcopterController::control()
     rotorswitch = true;
   }
 
-  bool modeButtonState = (joy.buttons[BUTTON_R_STICK] == 1); // StableModeの切り替え
+  bool modeButtonState = (joy.buttons[JoyButton::PS] == 1); // StableModeの切り替え
   if (modeButtonState)
   { // Rスティックの押し込みで切り替えられる
     if (!prevModeButtonState)
@@ -376,7 +376,7 @@ bool RTRQuadcopterController::control()
         { // StableModeじゃないとき
           if (fabs(pos) > 0.25)
           {
-            zrpyref[i] = RATE[i] * pos; // Lスティックと同じ
+            zrpyref[i] = RATE[i] * -pos; // Lスティックと同じ
           }
           else
           {
@@ -388,7 +388,7 @@ bool RTRQuadcopterController::control()
           int axis_xy = i - 1; // Rスティックの横: 0, 縦: 1の値をとる
           if (fabs(pos) > 0.25)
           {
-            dxyref[axis_xy] = RATEX[axis_xy] * pos; // RATEXでスケーリング
+            dxyref[axis_xy] = RATEX[axis_xy] * -pos; // RATEXでスケーリング
           }
           else
           {
@@ -453,7 +453,7 @@ bool RTRQuadcopterController::control()
   static const double P = 0.00002;
   static const double D = 0.00004;
   double dq = (q - qprev) / timeStep;
-  double pos = joy.axes[CAMERA_AXIS] * -1.0;
+  double pos = joy.axes[CAMERA_AXIS];
   // double pos = joystick->getPosition(targetMode, cameraAxis) * -1.0;
   double dqref = 0.0;
   if (fabs(pos) > 0.25)
