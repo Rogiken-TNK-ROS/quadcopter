@@ -290,17 +290,6 @@ bool RTRQuadcopterController::control()
   const int BUTTON_X = 1;
   const int BUTTON_R_STICK = 11;
 
-  // joystick->updateState(targetMode); // ジョイコンのための謎の処理
-
-  if (wait_camera == 0 || 20 < wait_camera)
-  {
-    wait_camera = 0;
-  }
-  else
-  {
-    wait_camera++;
-  }
-
   // power = joystick->getButtonState(targetMode,
   //                                  powerButton);  // ローターのOn/Offの切り替え
   if (joy.buttons[JoyButton::X] == 1)
@@ -483,31 +472,27 @@ bool RTRQuadcopterController::control()
   }
   cameraT->u() = P * (qref - q) + D * (dqref - dq);
   qprev = q;
-  if (joy.buttons[ZOOM_IN_BTN] == 1 &&
-      wait_camera == 0)
+  if (joy.axes[JoyAxis::DIR_PAD_H] > 0.25 )
   { //カメラの角度範囲（フォーカス）変更
-    fieldOfView += 0.02;
+    fieldOfView += 0.004;
     if (fieldOfView > 1.64)
     {
       fieldOfView = 1.64;
     }
     camera2->setFieldOfView(fieldOfView);
     camera2->notifyStateChange();
-    wait_camera = 1;
   }
-  if (joy.buttons[ZOOM_OUT_BTN] == 1 &&
-      wait_camera == 0)
+  if (joy.axes[JoyAxis::DIR_PAD_H] < -0.25 )
   {
-    fieldOfView -= 0.02;
-    if (fieldOfView < 0.003)
+    fieldOfView -= 0.004;
+    if (fieldOfView < 0.002)
     {
-      fieldOfView = 0.003;
+      fieldOfView = 0.002;
     }
     camera2->setFieldOfView(fieldOfView);
     camera2->notifyStateChange();
-    wait_camera = 1;
   }
-  if (joy.buttons[ZOOM_RESET_BTN] == 1)
+  if (joy.buttons[JoyButton::TRIANGLE] == 1)
   {
     fieldOfView = 0.785398;
     camera2->setFieldOfView(fieldOfView);
