@@ -235,8 +235,8 @@ links:
         format: COLOR
         fieldOfView: 65
         nearClipDistance: 0.02
-        width: 320
-        height: 240
+        width: 640
+        height: 480
         frameRate: 30
         elements:
           Shape:
