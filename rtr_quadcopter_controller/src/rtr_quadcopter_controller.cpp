@@ -292,6 +292,10 @@ bool RTRQuadcopterController::calcQRPoint()
   auto axis_angle1 = AngleAxisd(M_PI / 2 + q, axis1);
   const auto [xyz, dxyz, ddxyz, rpy, drpy, ddrpy] = imu_manager.get();
   Matrix3 rot = rotFromRpy(rpy);
+  // for debug
+  // const auto xyz = ioBody->rootLink()->translation();
+  // Matrix3 rot = ioBody->rootLink()->position().rotation();
+  
   Vector3d translation;
   translation << 0.02, 0.0, -0.02;
   const auto norm = point_raw.norm();
