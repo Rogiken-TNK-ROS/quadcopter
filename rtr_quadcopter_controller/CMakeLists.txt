@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   trajectory_msgs
   choreonoid
   pcl_ros
+  message_generation
 )
 
 include_directories(
@@ -31,6 +32,10 @@ link_directories(
   ${CHOREONOID_LIBRARY_DIRS}
   ${PCL_LIBRARIES}
 )
+
+add_service_files(DIRECTORY srv FILES QRPosition.srv)
+generate_messages(DEPENDENCIES std_msgs)
+catkin_package(CATKIN_DEPENDS message_runtime std_msgs)
 
 function(add_cnoid_simple_controller)
   set(target ${ARGV0})
