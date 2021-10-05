@@ -25,6 +25,7 @@
 #include "imu_debugger.hpp"
 #include "imu_filter.h"
 #include "imu_manager.hpp"
+#include "rtr_quadcopter_controller/QRPosition.h"
 
 using namespace cnoid;
 
@@ -95,7 +96,12 @@ namespace
   constexpr double RATEX[] = {-1.0, -1.0};
 
   using PointCloud = pcl::PointCloud<pcl::PointXYZ>;
-
+struct QRData{
+  volatile bool has_request_processed = true;
+  ros::ServiceServer server;
+  rtr_quadcopter_controller::QRPosition::Request request;
+  rtr_quadcopter_controller::QRPosition::Response response;
+};
   class RTRQuadcopterController : public SimpleController
   {
   public:
@@ -107,6 +113,7 @@ namespace
     Multicopter::RotorDevice *rotor[4];
     Link *cameraT;
     Camera *camera2;
+    RangeCamera *camera2_qr;
 
     sensor_msgs::Joy joy;
     ros::Subscriber joy_sub;
@@ -128,6 +135,10 @@ namespace
 
     virtual bool initialize(SimpleControllerIO *io) override;
     void calcPoint();
+    bool calcQRPoint();
+    using QRReq = rtr_quadcopter_controller::QRPosition::Request;
+    using QRRes = rtr_quadcopter_controller::QRPosition::Response;
+    bool QRPositionCallback(QRReq &req, QRRes &res);
     void joyconCallback(const sensor_msgs::Joy);
     virtual bool control() override;
 
@@ -148,6 +159,7 @@ namespace
 
     double fieldOfView;
     unsigned int wait_camera = 0;
+    QRData qr_data;
   };
 
 } // namespace
@@ -170,6 +182,11 @@ bool RTRQuadcopterController::initialize(SimpleControllerIO *io)
   fieldOfView = 0.785398;
   camera2->setFieldOfView(fieldOfView);
   camera2->notifyStateChange();
+
+  camera2_qr = ioBody->findDevice<RangeCamera>("Camera2_QR");
+  io->enableInput(camera2_qr);
+  camera2_qr->notifyStateChange();
+  qr_data.server = node.advertiseService("/quadcopter/qr_position", &RTRQuadcopterController::QRPositionCallback, this);
 
   cameraT = ioBody->link("CAMERA_T");
   cameraT->setActuationMode(Link::JOINT_TORQUE);
@@ -257,6 +274,46 @@ void RTRQuadcopterController::calcPoint()
   printf("pcl_size: %lu\n", msg->points.size());
 
   pub.publish(msg);
+}
+
+bool RTRQuadcopterController::calcQRPoint()
+{
+  std::cout << "calcQRPoint" << std::endl;
+  Vector3f point_raw_;
+  try {
+    point_raw_ = camera2_qr->points().at(qr_data.request.image_y * camera2_qr->resolutionX() + qr_data.request.image_x);
+  } catch (const std::out_of_range& oor) {
+    std::cout << "out of range " << oor.what() << std::endl;
+    return false;
+  } 
+  Vector3d point_raw(point_raw_[0], point_raw_[1], point_raw_[2]);
+  const auto q = cameraT->q();
+
+  auto axis_angle1 = AngleAxisd(M_PI / 2 + q, axis1);
+  const auto [xyz, dxyz, ddxyz, rpy, drpy, ddrpy] = imu_manager.get();
+  Matrix3 rot = rotFromRpy(rpy);
+  Vector3d translation;
+  translation << 0.02, 0.0, -0.02;
+  const auto norm = point_raw.norm();
+  if (!isinf(norm) && !isnan(norm))
+  {
+    Vector3d poi = point_raw + translation;
+    const Vector3d relative = axis_angle1 * poi + offset;
+    if (0 < relative[2])
+    {
+      std::cout << "MINUS!!!!!" << std::endl;
+      return false;
+    }
+    const Vector3d point = rot * mirror_xy * AxisAngle2 * relative + xyz;
+    qr_data.response.qr_global_x = point[0];
+    qr_data.response.qr_global_y = point[1];
+    qr_data.response.qr_global_z = point[2];
+    qr_data.has_request_processed = true;
+    std::cout << "SUCCESS" << std::endl;
+    return true;
+  }
+  std::cout << "NAN!!!!!" << std::endl;
+  return false;
 }
 
 void RTRQuadcopterController::joyconCallback(const sensor_msgs::Joy joy)
@@ -428,6 +485,10 @@ bool RTRQuadcopterController::control()
     {
       calcPoint();
     }
+    if(qr_data.has_request_processed == false)
+    {
+      calcQRPoint();
+    }
   }
 
   for (int i = 0; i < 4; ++i)
@@ -500,5 +561,31 @@ bool RTRQuadcopterController::control()
   }
   return true;
 }
+
+bool RTRQuadcopterController::QRPositionCallback(rtr_quadcopter_controller::QRPosition::Request &req, rtr_quadcopter_controller::QRPosition::Response &res)
+    {
+        std::cout << "QRPositionCallback" << std::endl;
+        qr_data.has_request_processed = false;
+        qr_data.request = req;
+        // カメラを起動
+        camera2_qr->setResolutionX(camera2->resolutionX());
+        camera2_qr->setResolutionY(camera2->resolutionY());
+        camera2_qr->setFieldOfView(camera2->fieldOfView());
+        camera2_qr->setNearClipDistance(camera2->nearClipDistance());
+        camera2_qr->setFarClipDistance(camera2->farClipDistance());
+        camera2_qr->on(true);
+        camera2_qr->notifyStateChange();
+
+         ros::Duration interval(0, 100000000); // 0.1 seconds
+        while(qr_data.has_request_processed == false){
+            interval.sleep();
+        }
+        res = qr_data.response;
+        // カメラを停止
+        camera2_qr->on(false);
+        camera2_qr->notifyStateChange();
+        std::cout << "QRPositionCallback" << std::endl;
+        return true;
+    }
 
 CNOID_IMPLEMENT_SIMPLE_CONTROLLER_FACTORY(RTRQuadcopterController)
