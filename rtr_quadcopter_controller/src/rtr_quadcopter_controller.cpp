@@ -180,7 +180,6 @@ bool RTRQuadcopterController::initialize(SimpleControllerIO *io)
 
   camera2 = ioBody->findDevice<Camera>("Camera2"); //取得
   io->enableInput(camera2);
-  camera2->setResolution(1280, 720); //解像度変更
   fieldOfView = 0.785398;
   camera2->setFieldOfView(fieldOfView);
   camera2->notifyStateChange();
