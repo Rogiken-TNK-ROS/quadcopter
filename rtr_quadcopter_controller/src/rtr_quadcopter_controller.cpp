@@ -26,7 +26,7 @@
 #include "imu_debugger.hpp"
 #include "imu_filter.h"
 #include "imu_manager.hpp"
-#include "rtr_quadcopter_controller/QRPosition.h"
+#include "rtr_msgs/QRPosition.h"
 
 using namespace cnoid;
 
@@ -100,8 +100,8 @@ namespace
 struct QRData{
   volatile bool has_request_processed = true;
   ros::ServiceServer server;
-  rtr_quadcopter_controller::QRPosition::Request request;
-  rtr_quadcopter_controller::QRPosition::Response response;
+  rtr_msgs::QRPosition::Request request;
+  rtr_msgs::QRPosition::Response response;
 };
   class RTRQuadcopterController : public SimpleController
   {
@@ -137,8 +137,8 @@ struct QRData{
     virtual bool initialize(SimpleControllerIO *io) override;
     void calcPoint();
     bool calcQRPoint();
-    using QRReq = rtr_quadcopter_controller::QRPosition::Request;
-    using QRRes = rtr_quadcopter_controller::QRPosition::Response;
+    using QRReq = rtr_msgs::QRPosition::Request;
+    using QRRes = rtr_msgs::QRPosition::Response;
     bool QRPositionCallback(QRReq &req, QRRes &res);
     void joyconCallback(const sensor_msgs::Joy);
     virtual bool control() override;
@@ -601,7 +601,7 @@ bool RTRQuadcopterController::control()
   return true;
 }
 
-bool RTRQuadcopterController::QRPositionCallback(rtr_quadcopter_controller::QRPosition::Request &req, rtr_quadcopter_controller::QRPosition::Response &res)
+bool RTRQuadcopterController::QRPositionCallback(rtr_msgs::QRPosition::Request &req, rtr_msgs::QRPosition::Response &res)
     {
         std::cout << "QRPositionCallback" << std::endl;
         qr_data.has_request_processed = false;
