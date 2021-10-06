@@ -3,6 +3,7 @@
 #include "imu_manager.hpp"
 
 #include <geometry_msgs/Pose.h>
+#include <tf2/LinearMath/Quaternion.h>
 
 #include <iostream>
 
@@ -96,7 +97,9 @@ void imu_manager::set(
   quat.normalize();
   filter.setOrientation(quat.w(), quat.x(), quat.y(), quat.z());
 }
+
 void imu_manager::publish() {
+  // publishes a Pose msg.
   geometry_msgs::Pose msg;
   msg.position.x = xyz[0];
   msg.position.y = xyz[1];
@@ -107,6 +110,23 @@ void imu_manager::publish() {
   msg.orientation.w = quat.w();
 
   pub.publish(msg);
+
+  // publishes a TF
+  geometry_msgs::TransformStamped tf;
+  tf.header.stamp = ros::Time::now();
+  tf.header.frame_id = "HORIZONTAL_PLANE";
+  tf.child_frame_id = "BODY";
+  tf.transform.translation.x = 0.0;
+  tf.transform.translation.y = 0.0;
+  tf.transform.translation.z = 0.0;
+  tf2::Quaternion q;
+  q.setRPY(rpy[0], rpy[1], rpy[2]);
+  tf.transform.rotation.x = q.x();
+  tf.transform.rotation.y = q.y();
+  tf.transform.rotation.z = q.z();
+  tf.transform.rotation.w = q.w();
+
+  broadcaster_.sendTransform(tf);
 }
 
 }  // namespace imu

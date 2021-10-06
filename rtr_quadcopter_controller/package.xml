@@ -15,6 +15,8 @@
   <depend>choreonoid_ros_plugin</depend>
   <depend>std_msgs</depend>
   <depend>sensor_msgs</depend>
+  <depend>tf2</depend>
+  <depend>tf2_ros</depend>
   <depend>trajectory_msgs</depend>
   <depend>pcl</depend>
   <depend>pcl_ros</depend>
