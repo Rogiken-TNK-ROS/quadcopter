@@ -1,0 +1,6 @@
+int64 image_x
+int64 image_y
+---
+float32 qr_global_x
+float32 qr_global_y
+float32 qr_global_z

@@ -251,6 +251,29 @@ links:
                 specularColor: [ 0.2, 0.2, 0 ]
                 shininess: 0.6
       -
+        type: Camera
+        name: Camera2_QR
+        translation: [ 0.02, 0, -0.02 ]
+        rotation: [ [ 1, 0, 0, 90 ], [ 0, 1, 0, -90 ] ]
+        format: COLOR_DEPTH
+        fieldOfView: 65
+        nearClipDistance: 0.02
+        width: 640
+        height: 480
+        frameRate: 30
+        elements:
+          Shape:
+            rotation: [ 1, 0, 0, 90 ]
+            geometry:
+              type: Cylinder
+              radius: 0.003
+              height: 0.01
+            appearance:
+              material:
+                diffuseColor: [ 0.8, 0.2, 0.2 ]
+                specularColor: [ 0.2, 0.2, 0 ]
+                shininess: 0.6
+      -
         type: SpotLight
         name: Light_for_Camera
         translation: [ 0.03, 0, 0.01 ]
