@@ -4,6 +4,7 @@
 #define QUADCOPTERCONTROLLERWRS_IMU_MANAGER_HPP
 
 #include <ros/ros.h>
+#include <tf2_ros/transform_broadcaster.h>
 
 #include <cnoid/AccelerationSensor>
 #include <cnoid/EigenUtil>
@@ -43,6 +44,8 @@ class imu_manager {
   cnoid::Quaterniond quat;
 
   ros::Publisher pub;
+  tf2_ros::TransformBroadcaster broadcaster_;
 };
 }  // namespace imu
-#endif  //  QUADCOPTERCONTROLLERWRS_IMU_MANAGER_HPP
+
+#endif  // QUADCOPTERCONTROLLERWRS_IMU_MANAGER_HPP
