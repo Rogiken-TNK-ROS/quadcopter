@@ -219,7 +219,7 @@ bool RTRQuadcopterController::initialize(SimpleControllerIO *io)
   cam->on(true);
   cam->notifyStateChange();
 
-  pub = node.advertise<PointCloud>("/quadcopter/output", 10);
+  pub = node.advertise<PointCloud>("/quadcopter/output", 1);
   msg = PointCloud::Ptr(new PointCloud);
   msg->header.frame_id = "WRS";
 
@@ -229,7 +229,7 @@ bool RTRQuadcopterController::initialize(SimpleControllerIO *io)
   AxisAngle2 = AngleAxisd(M_PI / 2, axis2);
   mirror_xy << -1, 0, 0, 0, -1, 0, 0, 0, 1;
 
-  joy_sub = node.subscribe<sensor_msgs::Joy>("/joy", 1, &RTRQuadcopterController::joyconCallback, this);
+  joy_sub = node.subscribe<sensor_msgs::Joy>("/quadcopter/joy", 1, &RTRQuadcopterController::joyconCallback, this);
 
   range = ioBody->findDevice<RangeSensor>("UpperRangeSensor");
   io->enableInput(range);
