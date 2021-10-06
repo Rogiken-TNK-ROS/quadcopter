@@ -278,7 +278,22 @@ void RTRQuadcopterController::calcPoint()
 
 bool RTRQuadcopterController::calcQRPoint()
 {
+  if(!camera2_qr->on()){
+    // カメラを起動
+      camera2_qr->setResolutionX(camera2->resolutionX());
+      camera2_qr->setResolutionY(camera2->resolutionY());
+      camera2_qr->setFieldOfView(camera2->fieldOfView());
+      camera2_qr->setNearClipDistance(camera2->nearClipDistance());
+      camera2_qr->setFarClipDistance(camera2->farClipDistance());
+      camera2_qr->on(true);
+      camera2_qr->clearPoints();
+      camera2_qr->notifyStateChange();
+  }
   std::cout << "calcQRPoint" << std::endl;
+  if(camera2_qr->numPoints() == 0){
+    std::cout << "waiting for generate points" << std::endl;
+    return false;
+  }
   Vector3f point_raw_;
   try {
     point_raw_ = camera2_qr->points().at(qr_data.request.image_y * camera2_qr->resolutionX() + qr_data.request.image_x);
@@ -314,6 +329,9 @@ bool RTRQuadcopterController::calcQRPoint()
     qr_data.response.qr_global_z = point[2];
     qr_data.has_request_processed = true;
     std::cout << "SUCCESS" << std::endl;
+    // カメラを停止
+    camera2_qr->on(false);
+    camera2_qr->notifyStateChange();
     return true;
   }
   std::cout << "NAN!!!!!" << std::endl;
@@ -571,23 +589,13 @@ bool RTRQuadcopterController::QRPositionCallback(rtr_quadcopter_controller::QRPo
         std::cout << "QRPositionCallback" << std::endl;
         qr_data.has_request_processed = false;
         qr_data.request = req;
-        // カメラを起動
-        camera2_qr->setResolutionX(camera2->resolutionX());
-        camera2_qr->setResolutionY(camera2->resolutionY());
-        camera2_qr->setFieldOfView(camera2->fieldOfView());
-        camera2_qr->setNearClipDistance(camera2->nearClipDistance());
-        camera2_qr->setFarClipDistance(camera2->farClipDistance());
-        camera2_qr->on(true);
-        camera2_qr->notifyStateChange();
 
          ros::Duration interval(0, 100000000); // 0.1 seconds
         while(qr_data.has_request_processed == false){
             interval.sleep();
         }
         res = qr_data.response;
-        // カメラを停止
-        camera2_qr->on(false);
-        camera2_qr->notifyStateChange();
+
         std::cout << "QRPositionCallback" << std::endl;
         return true;
     }
