@@ -16,7 +16,7 @@ find_package(catkin REQUIRED COMPONENTS
   pcl_ros
   tf2
   tf2_ros
-  message_generation
+  rtr_msgs
 )
 
 include_directories(
@@ -35,14 +35,12 @@ link_directories(
   ${PCL_LIBRARIES}
 )
 
-add_service_files(DIRECTORY srv FILES QRPosition.srv)
-generate_messages(DEPENDENCIES std_msgs)
 catkin_package(
   CATKIN_DEPENDS
-    message_runtime
     std_msgs
     tf2
     tf2_ros 
+    rtr_msgs
 )
 
 function(add_cnoid_simple_controller)
