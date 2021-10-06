@@ -13,6 +13,7 @@
 
 #include <cnoid/AccelerationSensor> //センサ毎に必要
 #include <cnoid/Camera>
+#include <cnoid/RangeSensor>
 #include <cnoid/EigenUtil>
 #include <cnoid/RangeCamera>
 #include <cnoid/RateGyroSensor>
@@ -143,6 +144,7 @@ struct QRData{
     virtual bool control() override;
 
     RangeCamera *cam;
+    RangeSensor *range;
     ros::NodeHandle node;
     ros::Publisher pub;
     PointCloud::Ptr msg;
@@ -230,6 +232,11 @@ bool RTRQuadcopterController::initialize(SimpleControllerIO *io)
 
   joy_sub = node.subscribe<sensor_msgs::Joy>("/joy", 1, &RTRQuadcopterController::joyconCallback, this);
 
+  range = ioBody->findDevice<RangeSensor>("UpperRangeSensor");
+  io->enableInput(range);
+  range->on(true);
+  range->notifyStateChange();
+  
   return true;
 }
 
