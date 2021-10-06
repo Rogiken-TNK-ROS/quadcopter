@@ -377,10 +377,16 @@ bool RTRQuadcopterController::control()
 
   // power = joystick->getButtonState(targetMode,
   //                                  powerButton);  // ローターのOn/Offの切り替え
-  if (joy.buttons[JoyButton::X] == 1)
+  static bool prev_button = 0;
+  if ((rotorswitch==false)&&(joy.buttons[JoyButton::X] < prev_button))
   {
     rotorswitch = true;
   }
+  else if((rotorswitch==true)&&(joy.buttons[JoyButton::X] < prev_button))
+  {
+    rotorswitch = false;
+  }
+  prev_button = joy.buttons[JoyButton::X];
 
   bool modeButtonState = (joy.buttons[JoyButton::PS] == 1); // StableModeの切り替え
   if (modeButtonState)
@@ -449,7 +455,12 @@ bool RTRQuadcopterController::control()
         else
         {
           dzrpyref[i] = 0.0;
-        } // 次の行でそれぞれのaxisに対して速度を対象にPDしてる
+        }
+        if (abs(ddzrpy[i])<1e-4)
+        { // 不感帯の設定
+          ddzrpy[i] = 0;
+        }
+        // 次の行でそれぞれのaxisに対して速度を対象にPDしてる
         f[i] = KP[i] * (dzrpyref[i] - dzrpy[i]) +
                KD[i] * (0.0 - ddzrpy[i]);
       }
