@@ -22,7 +22,7 @@ items:
           class: BodyItem
           is_checked: true
           data: 
-            file: "../model/quadcopter_wrs.body"
+            file: "${SHARE}/rtr_choreonoid_models/model/RTRQuadcopter/quadcopter_wrs.body"
             format: CHOREONOID-BODY
             currentBaseLink: "BODY"
             rootPosition: [ -1.55410793e-07, -1.00120746e-07, 0.114890723 ]

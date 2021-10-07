@@ -18,7 +18,7 @@ items:
           plugin: Body
           class: BodyItem
           data:
-            modelFile: "../model/quadcopter_wrs.body"
+            file: "${SHARE}/rtr_choreonoid_models/model/RTRQuadcopter/quadcopter_wrs.body"
             currentBaseLink: "BODY"
             rootPosition: [-1.55410793e-07, -1.00120746e-07, 0.114890723]
             rootAttitude:
