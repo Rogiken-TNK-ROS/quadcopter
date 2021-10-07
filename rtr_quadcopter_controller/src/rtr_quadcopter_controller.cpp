@@ -420,7 +420,7 @@ bool RTRQuadcopterController::control()
 
     double cc = cos(zrpy[1]) * cos(zrpy[2]);
     // cos(roll)*cos(pitch)
-    double gfcoef = 1.0 * 9.80665 / 4 / cc;
+    double gfcoef = ioBody->mass() * 9.80665 / 4 / cc;
     // ローター1つあたりの、自重を支えるために必要な力
 
     Vector4 f;
