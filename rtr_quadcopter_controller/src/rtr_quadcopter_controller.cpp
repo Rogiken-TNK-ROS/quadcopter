@@ -70,6 +70,12 @@ namespace
     DIR_PAD_V = 10,
   };
 
+  enum JointID{
+    CAMERA_2 = 0,
+    CAMERA_3 = 1,
+    NUM = 2,
+  };
+
   constexpr int rotorAxis[4] = {JoyAxis::L_V, JoyAxis::R_H, JoyAxis::R_V, JoyAxis::L_H};
 
   constexpr int CAMERA_AXIS = JoyAxis::DIR_PAD_V;
@@ -103,6 +109,59 @@ struct QRData{
   rtr_msgs::QRPosition::Request request;
   rtr_msgs::QRPosition::Response response;
 };
+
+struct JointData{
+  Link *link;
+  double qref;
+  double qprev;
+  double upper_limit;
+  double lower_limit;
+  void enable(std::string name,BodyPtr body,SimpleControllerIO *io){
+    link = body->link(name.c_str());
+    link->setActuationMode(Link::JOINT_TORQUE);
+    io->enableIO(link);
+    qref = qprev = link->q();
+  }
+};
+
+template <typename CameraT>
+struct CameraData{
+  CameraT *camera;
+  double fov;
+  void enable(std::string name, BodyPtr body, SimpleControllerIO *io, double fov_in = -1){
+    camera = body->findDevice<CameraT>(name.c_str());
+    io->enableInput(camera);
+    if(fov_in > 0){
+      fov = fov_in;
+    }else{
+      fov = camera->fieldOfView();
+    }
+    camera->setFieldOfView(fov);
+    camera->notifyStateChange();
+  }
+};
+
+template <typename CameraT>
+struct CameraWithJointData{
+  JointData joint;
+  CameraData<CameraT> camera;
+};
+
+struct Button{
+  JoyButton button_id;
+  bool prev_state = false;
+  bool is_on = false;
+  bool update(sensor_msgs::Joy joy){
+    bool state = (joy.buttons[button_id] == 1);
+    if(state < prev_state){
+      is_on = !is_on;
+    }
+    prev_state = state;
+    return is_on;
+  }
+};
+
+
   class RTRQuadcopterController : public SimpleController
   {
   public:
