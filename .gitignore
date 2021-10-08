@@ -1,2 +1,5 @@
 *.o
 *.so
+rtr_quadcopter_controller/.idea/
+
+rtr_quadcopter_controller/cmake-build-debug/
