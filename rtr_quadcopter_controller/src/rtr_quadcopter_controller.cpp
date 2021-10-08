@@ -171,9 +171,10 @@ struct Button{
     std::ostream *os;
     Link *prop[4];
     Multicopter::RotorDevice *rotor[4];
-    Link *cameraT;
-    Camera *camera2;
-    RangeCamera *camera2_qr;
+
+    CameraWithJointData<Camera> cam2;
+    CameraWithJointData<Camera> cam3;
+    CameraData<RangeCamera> cam2_qr;
 
     sensor_msgs::Joy joy;
     ros::Subscriber joy_sub;
@@ -187,8 +188,8 @@ struct Button{
     bool isStableMode;
     bool prevModeButtonState;
 
-    double qref;
-    double qprev;
+    // double qref;
+    // double qprev;
     bool power;
     bool powerprev;
     bool rotorswitch;
@@ -222,7 +223,7 @@ struct Button{
 
     Matrix3d mirror_xy;
 
-    double fieldOfView;
+
     unsigned int wait_camera = 0;
     QRData qr_data;
   };
@@ -241,21 +242,19 @@ bool RTRQuadcopterController::initialize(SimpleControllerIO *io)
   imu_debugger.init(ioBody, timeStep);
   imu_manager.set(imu_debugger.get());
 
-  camera2 = ioBody->findDevice<Camera>("Camera2"); //取得
-  io->enableInput(camera2);
-  fieldOfView = 0.785398;
-  camera2->setFieldOfView(fieldOfView);
-  camera2->notifyStateChange();
+  cam2.camera.enable("Camera2",ioBody,io);
+  cam3.camera.enable("Camera3",ioBody,io);
 
-  camera2_qr = ioBody->findDevice<RangeCamera>("Camera2_QR");
-  io->enableInput(camera2_qr);
-  camera2_qr->notifyStateChange();
+  cam2_qr.enable("Camera2_QR",ioBody,io);
+
   qr_data.server = node.advertiseService("/quadcopter/qr_position", &RTRQuadcopterController::QRPositionCallback, this);
 
-  cameraT = ioBody->link("CAMERA_T");
-  cameraT->setActuationMode(Link::JOINT_TORQUE);
-  io->enableIO(cameraT);
-  qref = qprev = cameraT->q();
+  cam2.joint.enable("CAMERA_2",ioBody,io);
+  cam2.joint.lower_limit = -M_PI;
+  cam2.joint.upper_limit = 0.0;
+  cam3.joint.enable("CAMERA_3",ioBody,io);
+  cam3.joint.lower_limit = 0.0;
+  cam3.joint.upper_limit = M_PI;
 
   for (int i = 0; i < 4; i++)
   {
@@ -269,7 +268,7 @@ bool RTRQuadcopterController::initialize(SimpleControllerIO *io)
   }
 
   isStableMode = true;
-  prevModeButtonState = false;
+//  prevModeButtonState = false;
 
   power = powerprev = false;
 
@@ -313,7 +312,7 @@ void RTRQuadcopterController::calcPoint()
   count = 0;
 
   auto p = cam->points();
-  const auto q = cameraT->q();
+  const auto q = cam2.joint.link->q();
 
   msg->points.clear();
   msg->points.reserve(p.size());
@@ -347,31 +346,31 @@ void RTRQuadcopterController::calcPoint()
 
 bool RTRQuadcopterController::calcQRPoint()
 {
-  if(!camera2_qr->on()){
+  if(!cam2_qr.camera->on()){
     // カメラを起動
-      camera2_qr->setResolutionX(camera2->resolutionX());
-      camera2_qr->setResolutionY(camera2->resolutionY());
-      camera2_qr->setFieldOfView(camera2->fieldOfView());
-      camera2_qr->setNearClipDistance(camera2->nearClipDistance());
-      camera2_qr->setFarClipDistance(camera2->farClipDistance());
-      camera2_qr->on(true);
-      camera2_qr->clearPoints();
-      camera2_qr->notifyStateChange();
+      cam2_qr.camera->setResolutionX(cam2.camera.camera->resolutionX());
+      cam2_qr.camera->setResolutionY(cam2.camera.camera->resolutionY());
+      cam2_qr.camera->setFieldOfView(cam2.camera.camera->fieldOfView());
+      cam2_qr.camera->setNearClipDistance(cam2.camera.camera->nearClipDistance());
+      cam2_qr.camera->setFarClipDistance(cam2.camera.camera->farClipDistance());
+      cam2_qr.camera->on(true);
+      cam2_qr.camera->clearPoints();
+      cam2_qr.camera->notifyStateChange();
   }
   std::cout << "calcQRPoint" << std::endl;
-  if(camera2_qr->numPoints() == 0){
+  if(cam2_qr.camera->numPoints() == 0){
     std::cout << "waiting for generate points" << std::endl;
     return false;
   }
   Vector3f point_raw_;
   try {
-    point_raw_ = camera2_qr->points().at(qr_data.request.image_y * camera2_qr->resolutionX() + qr_data.request.image_x);
+    point_raw_ = cam2_qr.camera->points().at(qr_data.request.image_y * cam2_qr.camera->resolutionX() + qr_data.request.image_x);
   } catch (const std::out_of_range& oor) {
     std::cout << "out of range " << oor.what() << std::endl;
     return false;
   } 
   Vector3d point_raw(point_raw_[0], point_raw_[1], point_raw_[2]);
-  const auto q = cameraT->q();
+  const auto q = cam2.joint.link->q();
 
   auto axis_angle1 = AngleAxisd(M_PI / 2 + q, axis1);
   const auto [xyz, dxyz, ddxyz, rpy, drpy, ddrpy] = imu_manager.get();
@@ -399,8 +398,8 @@ bool RTRQuadcopterController::calcQRPoint()
     qr_data.has_request_processed = true;
     std::cout << "SUCCESS" << std::endl;
     // カメラを停止
-    camera2_qr->on(false);
-    camera2_qr->notifyStateChange();
+    cam2_qr.camera->on(false);
+    cam2_qr.camera->notifyStateChange();
     return true;
   }
   std::cout << "NAN!!!!!" << std::endl;
@@ -435,31 +434,25 @@ bool RTRQuadcopterController::control()
       joy.axes[i] = 0.0;
     }
   }
-  const int BUTTON_X = 1;
-  const int BUTTON_R_STICK = 11;
 
-  // power = joystick->getButtonState(targetMode,
-  //                                  powerButton);  // ローターのOn/Offの切り替え
-  static bool prev_button = 0;
-  if ((rotorswitch==false)&&(joy.buttons[JoyButton::X] < prev_button))
-  {
-    rotorswitch = true;
-  }
-  else if((rotorswitch==true)&&(joy.buttons[JoyButton::X] < prev_button))
-  {
-    rotorswitch = false;
-  }
-  prev_button = joy.buttons[JoyButton::X];
+  static Button rotor_button;
+  rotor_button.button_id = JoyButton::X;
+  rotorswitch = rotor_button.update(joy);
 
-  bool modeButtonState = (joy.buttons[JoyButton::PS] == 1); // StableModeの切り替え
-  if (modeButtonState)
-  { // Rスティックの押し込みで切り替えられる
-    if (!prevModeButtonState)
-    {
-      isStableMode = !isStableMode;
-    }
+  static Button stable_button;
+  stable_button.button_id = JoyButton::R_STICK;
+  isStableMode = rotor_button.update(joy);
+
+  static Button camera_switch_button;
+  camera_switch_button.button_id = JoyButton::PS;
+  bool camera3_on = camera_switch_button.update(joy);
+
+  JointID current_cam;
+  if(camera3_on){
+    current_cam = JointID::CAMERA_3;
+  }else{
+    current_cam = JointID::CAMERA_2;
   }
-  prevModeButtonState = modeButtonState;
 
   Vector4 force = Vector4::Zero();
   Vector4 torque = Vector4::Zero();
@@ -611,8 +604,21 @@ bool RTRQuadcopterController::control()
     // 入力した推力とトルクをシミュレーションに反映
   }
 
-  // control camera
-  double q = cameraT->q(); // カメラを十字キーで動かせるようにしてる
+  switch(current_cam){
+    case JointID::CAMERA_2:
+      controlJoint(cam2.joint,joy.axes[CAMERA_AXIS]);
+      controlJoint(cam3.joint,0.0);
+      controlFov(cam2.camera);
+      break;
+    case JointID::CAMERA_3:
+      controlJoint(cam2.joint,0.0);
+      controlJoint(cam3.joint,joy.axes[CAMERA_AXIS]);
+      controlFov(cam3.camera);
+      break;
+  }
+  
+  return true;
+}
 
 void RTRQuadcopterController::controlJoint(JointData& joint,double input){
   double q = joint.link->q();
