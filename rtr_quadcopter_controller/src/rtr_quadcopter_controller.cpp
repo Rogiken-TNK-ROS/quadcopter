@@ -70,7 +70,7 @@ namespace
     DIR_PAD_V = 10,
   };
 
-  enum JointID{
+  enum ControllableCameraID{
     CAMERA_2 = 0,
     CAMERA_3 = 1,
     NUM = 2,
@@ -447,11 +447,11 @@ bool RTRQuadcopterController::control()
   camera_switch_button.button_id = JoyButton::PS;
   bool camera3_on = camera_switch_button.update(joy);
 
-  JointID current_cam;
+  ControllableCameraID current_control_cam;
   if(camera3_on){
-    current_cam = JointID::CAMERA_3;
+    current_control_cam = ControllableCameraID::CAMERA_3;
   }else{
-    current_cam = JointID::CAMERA_2;
+    current_control_cam = ControllableCameraID::CAMERA_2;
   }
 
   Vector4 force = Vector4::Zero();
@@ -604,13 +604,13 @@ bool RTRQuadcopterController::control()
     // 入力した推力とトルクをシミュレーションに反映
   }
 
-  switch(current_cam){
-    case JointID::CAMERA_2:
+  switch(current_control_cam){
+    case ControllableCameraID::CAMERA_2:
       controlJoint(cam2.joint,joy.axes[CAMERA_AXIS]);
       controlJoint(cam3.joint,0.0);
       controlFov(cam2.camera);
       break;
-    case JointID::CAMERA_3:
+    case ControllableCameraID::CAMERA_3:
       controlJoint(cam2.joint,0.0);
       controlJoint(cam3.joint,joy.axes[CAMERA_AXIS]);
       controlFov(cam3.camera);
