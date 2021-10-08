@@ -13,6 +13,7 @@
 
 #include <cnoid/AccelerationSensor> //センサ毎に必要
 #include <cnoid/Camera>
+#include <cnoid/Light>
 #include <cnoid/RangeSensor>
 #include <cnoid/EigenUtil>
 #include <cnoid/RangeCamera>
@@ -83,6 +84,8 @@ namespace
   constexpr int ZOOM_IN_BTN = JoyButton::CIRCLE;
   constexpr int ZOOM_OUT_BTN = JoyButton::SQUARE;
   constexpr int ZOOM_RESET_BTN = JoyButton::TRIANGLE;
+  constexpr int LIGHT_BRIGHTEN_BTN = JoyButton::L1;
+  constexpr int LIGHT_DARKEN_BTN = JoyButton::L2;
 
   constexpr float JOY_TIMEOUT_MS = 500;
   // ボタン周りの割当.
@@ -101,6 +104,7 @@ namespace
   constexpr double KPX[] = {0.4, 0.4};
   constexpr double KDX[] = {0.4, 0.4};
   constexpr double RATEX[] = {-1.0, -1.0};
+
 
   using PointCloud = pcl::PointCloud<pcl::PointXYZ>;
 struct QRData{
@@ -161,6 +165,32 @@ struct Button{
   }
 };
 
+struct LightSource{
+  Light* light;
+  void enable(std::string name, BodyPtr body, SimpleControllerIO *io, double init_intensity){
+    light = body->findDevice<Light>(name.c_str());
+    io->enableInput(light);
+    light->setIntensity(init_intensity);
+    light->notifyStateChange();
+  }
+  void brighten(double sp = 0.005){
+    double intensity = light->intensity();
+    if (intensity<1.0-sp){
+      intensity+=sp;
+    }
+    light->setIntensity(intensity);
+    light->notifyStateChange();
+  }
+  void darken(double sp = 0.005){
+    double intensity = light->intensity();
+    if (intensity>0.0+sp){
+      intensity-=sp;
+    }
+    light->setIntensity(intensity);
+    light->notifyStateChange();
+  }
+};
+
 
   class RTRQuadcopterController : public SimpleController
   {
@@ -175,6 +205,8 @@ struct Button{
     CameraWithJointData<Camera> cam2;
     CameraWithJointData<Camera> cam3;
     CameraData<RangeCamera> cam2_qr;
+
+    LightSource light[4];
 
     sensor_msgs::Joy joy;
     ros::Subscriber joy_sub;
@@ -255,6 +287,12 @@ bool RTRQuadcopterController::initialize(SimpleControllerIO *io)
   cam3.joint.enable("CAMERA_3",ioBody,io);
   cam3.joint.lower_limit = 0.0;
   cam3.joint.upper_limit = M_PI;
+
+  // 光源オブジェクト
+  light[0].enable("Light_main1",ioBody,io,0.7); // 第4引数は初期の光強度値 [0,1]
+  light[1].enable("Light_main2",ioBody,io,0.7);
+  light[2].enable("Light_for_Camera2",ioBody,io,0.7);
+  light[3].enable("Light_for_Camera3",ioBody,io,0.7);
 
   for (int i = 0; i < 4; i++)
   {
@@ -617,6 +655,17 @@ bool RTRQuadcopterController::control()
       break;
   }
   
+  // ライト操作
+  if (joy.buttons[JoyButton::L1] == 1) {
+    for (int i=0; i<4; i++){
+      light[i].brighten();
+    }
+  }
+  if (joy.buttons[JoyButton::L2] == 1) {
+    for (int i=0; i<4; i++){
+      light[i].darken();
+    }
+  }
   return true;
 }
 
