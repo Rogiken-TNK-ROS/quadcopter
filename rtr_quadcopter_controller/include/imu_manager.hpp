@@ -31,6 +31,7 @@ class imu_manager {
       const std::tuple<cnoid::Vector3, cnoid::Vector3, cnoid::Vector3,
                        cnoid::Vector3, cnoid::Vector3, cnoid::Vector3>& data);
   void publish();
+  void reset();
 
  private:
   double time_step;
