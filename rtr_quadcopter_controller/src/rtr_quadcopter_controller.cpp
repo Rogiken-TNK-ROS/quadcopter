@@ -538,14 +538,14 @@ bool RTRQuadcopterController::control()
       controlFov(cam3.camera);
       break;
   }
-  
+
   // ライト操作
-  if (joy.buttons[JoyButton::L1] == 1) {
+  if (joy.buttons[JoyButton::R1]) {
     for (int i=0; i<4; i++){
       light[i].brighten();
     }
   }
-  if (joy.buttons[JoyButton::L2] == 1) {
+  if (joy.buttons[JoyButton::L1]) {
     for (int i=0; i<4; i++){
       light[i].darken();
     }
