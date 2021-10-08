@@ -227,8 +227,6 @@ struct LightSource{
     bool rotorswitch;
 
     virtual bool initialize(SimpleControllerIO *io) override;
-    void calcPoint();
-    bool calcQRPoint();
     using QRReq = rtr_msgs::QRPosition::Request;
     using QRRes = rtr_msgs::QRPosition::Response;
     bool QRPositionCallback(QRReq &req, QRRes &res);
@@ -337,111 +335,6 @@ bool RTRQuadcopterController::initialize(SimpleControllerIO *io)
   range->notifyStateChange();
   
   return true;
-}
-
-void RTRQuadcopterController::calcPoint()
-{
-  static int count = 0;
-  if (count++ * timeStep < 0.8)
-  {
-    return;
-  }
-
-  count = 0;
-
-  auto p = cam->points();
-  const auto q = cam2.joint.link->q();
-
-  msg->points.clear();
-  msg->points.reserve(p.size());
-
-  AxisAngle1 = AngleAxisd(M_PI / 2 + q, axis1);
-  const auto [xyz, dxyz, ddxyz, rpy, drpy, ddrpy] = imu_manager.get();
-  Matrix3 rot = rotFromRpy(rpy);
-  for (const auto &z : p)
-  {
-    const auto norm = z.norm();
-    if (!isinf(norm) && !isnan(norm))
-    {
-      Vector3d poi;
-      poi << z[0], z[1], z[2] + 0.03;
-
-      const Vector3d relative = AxisAngle1 * poi + offset;
-      if (0 < relative[2])
-      {
-        continue;
-      }
-      const Vector3d point = rot * mirror_xy * AxisAngle2 * relative + xyz;
-      msg->points.push_back(pcl::PointXYZ(point[0], point[1], point[2]));
-    }
-  }
-  msg->height = msg->points.size();
-  msg->width = 1;
-  printf("pcl_size: %lu\n", msg->points.size());
-
-  pub.publish(msg);
-}
-
-bool RTRQuadcopterController::calcQRPoint()
-{
-  if(!cam2_qr.camera->on()){
-    // カメラを起動
-      cam2_qr.camera->setResolutionX(cam2.camera.camera->resolutionX());
-      cam2_qr.camera->setResolutionY(cam2.camera.camera->resolutionY());
-      cam2_qr.camera->setFieldOfView(cam2.camera.camera->fieldOfView());
-      cam2_qr.camera->setNearClipDistance(cam2.camera.camera->nearClipDistance());
-      cam2_qr.camera->setFarClipDistance(cam2.camera.camera->farClipDistance());
-      cam2_qr.camera->on(true);
-      cam2_qr.camera->clearPoints();
-      cam2_qr.camera->notifyStateChange();
-  }
-  std::cout << "calcQRPoint" << std::endl;
-  if(cam2_qr.camera->numPoints() == 0){
-    std::cout << "waiting for generate points" << std::endl;
-    return false;
-  }
-  Vector3f point_raw_;
-  try {
-    point_raw_ = cam2_qr.camera->points().at(qr_data.request.image_y * cam2_qr.camera->resolutionX() + qr_data.request.image_x);
-  } catch (const std::out_of_range& oor) {
-    std::cout << "out of range " << oor.what() << std::endl;
-    return false;
-  } 
-  Vector3d point_raw(point_raw_[0], point_raw_[1], point_raw_[2]);
-  const auto q = cam2.joint.link->q();
-
-  auto axis_angle1 = AngleAxisd(M_PI / 2 + q, axis1);
-  const auto [xyz, dxyz, ddxyz, rpy, drpy, ddrpy] = imu_manager.get();
-  Matrix3 rot = rotFromRpy(rpy);
-  // for debug
-  // const auto xyz = ioBody->rootLink()->translation();
-  // Matrix3 rot = ioBody->rootLink()->position().rotation();
-  
-  Vector3d translation;
-  translation << 0.02, 0.0, -0.02;
-  const auto norm = point_raw.norm();
-  if (!isinf(norm) && !isnan(norm))
-  {
-    Vector3d poi = point_raw + translation;
-    const Vector3d relative = axis_angle1 * poi + offset;
-    if (0 < relative[2])
-    {
-      std::cout << "MINUS!!!!!" << std::endl;
-      return false;
-    }
-    const Vector3d point = rot * mirror_xy * AxisAngle2 * relative + xyz;
-    qr_data.response.qr_global_x = point[0];
-    qr_data.response.qr_global_y = point[1];
-    qr_data.response.qr_global_z = point[2];
-    qr_data.has_request_processed = true;
-    std::cout << "SUCCESS" << std::endl;
-    // カメラを停止
-    cam2_qr.camera->on(false);
-    cam2_qr.camera->notifyStateChange();
-    return true;
-  }
-  std::cout << "NAN!!!!!" << std::endl;
-  return false;
 }
 
 void RTRQuadcopterController::joyconCallback(const sensor_msgs::Joy joy)
@@ -612,15 +505,6 @@ bool RTRQuadcopterController::control()
       // forceは推力、torqueはトルク　この2つを出力として設定する。
       torque[i] = dir[i] * fi;
       // ここdirで片側2つを-1倍してるのはモーメントの計算のために力をすべて同じ回転方向で考えていたからかな?
-    }
-
-    if (joy.buttons[JoyButton::R1] == 1)
-    {
-      calcPoint();
-    }
-    if(qr_data.has_request_processed == false)
-    {
-      calcQRPoint();
     }
   }
 
