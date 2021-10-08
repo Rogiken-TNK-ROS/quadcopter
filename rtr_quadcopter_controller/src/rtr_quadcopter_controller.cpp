@@ -13,6 +13,7 @@
 
 #include <cnoid/AccelerationSensor> //センサ毎に必要
 #include <cnoid/Camera>
+#include <cnoid/Light>
 #include <cnoid/RangeSensor>
 #include <cnoid/EigenUtil>
 #include <cnoid/RangeCamera>
@@ -77,6 +78,8 @@ namespace
   constexpr int ZOOM_IN_BTN = JoyButton::CIRCLE;
   constexpr int ZOOM_OUT_BTN = JoyButton::SQUARE;
   constexpr int ZOOM_RESET_BTN = JoyButton::TRIANGLE;
+  constexpr int LIGHT_INTENSITY_UP_BUTTON = JoyButton::L1;
+  constexpr int LIGHT_INTENSITY_DOWN_BUTTON = JoyButton::L2;
 
   constexpr float JOY_TIMEOUT_MS = 500;
   // ボタン周りの割当.
@@ -113,6 +116,7 @@ struct QRData{
     Link *prop[4];
     Multicopter::RotorDevice *rotor[4];
     Link *cameraT;
+    Light* light_for_camera;
     Camera *camera2;
     RangeCamera *camera2_qr;
 
@@ -193,6 +197,9 @@ bool RTRQuadcopterController::initialize(SimpleControllerIO *io)
   cameraT->setActuationMode(Link::JOINT_TORQUE);
   io->enableIO(cameraT);
   qref = qprev = cameraT->q();
+
+  light_for_camera = ioBody->findDevice<Light>("Light_for_Camera");
+    io->enableInput(light_for_camera);
 
   for (int i = 0; i < 4; i++)
   {
@@ -598,6 +605,18 @@ bool RTRQuadcopterController::control()
     camera2->setFieldOfView(fieldOfView);
     camera2->notifyStateChange();
   }
+  // 光源強度の変更
+    double intensity = light_for_camera->intensity();
+    if ((joy.buttons[JoyButton::L1])&&(intensity < 1.0)) // L1キーで強める
+    {
+      light_for_camera->setIntensity(intensity+0.01);
+    }
+    if ((joy.buttons[JoyButton::L2])&&(intensity > 0.0)) // L2キーで弱める
+    {
+      light_for_camera->setIntensity(intensity-0.01);
+    }
+    light_for_camera->notifyStateChange();
+
   return true;
 }
 
