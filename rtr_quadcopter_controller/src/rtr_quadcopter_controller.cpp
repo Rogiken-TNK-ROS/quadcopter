@@ -201,9 +201,13 @@ struct Button{
     bool QRPositionCallback(QRReq &req, QRRes &res);
     void joyconCallback(const sensor_msgs::Joy);
     virtual bool control() override;
+    template<typename CameraT>
+    void controlFov(CameraData<CameraT>& camera);
+    void controlJoint(JointData& joint,double input);
 
     RangeCamera *cam;
     RangeSensor *range;
+
     ros::NodeHandle node;
     ros::Publisher pub;
     PointCloud::Ptr msg;
@@ -609,55 +613,60 @@ bool RTRQuadcopterController::control()
 
   // control camera
   double q = cameraT->q(); // カメラを十字キーで動かせるようにしてる
+
+void RTRQuadcopterController::controlJoint(JointData& joint,double input){
+  double q = joint.link->q();
   static const double P = 0.00002;
   static const double D = 0.00004;
-  double dq = (q - qprev) / timeStep;
-  double pos = joy.axes[CAMERA_AXIS];
-  // double pos = joystick->getPosition(targetMode, cameraAxis) * -1.0;
+  double dq = (q - joint.qprev) / timeStep;
+
   double dqref = 0.0;
-  if (fabs(pos) > 0.25)
+  if (fabs(input) > 0.25)
   {
-    double deltaq = 0.002 * pos;
-    qref += deltaq;
-    if (qref > 0)
+    double deltaq = 0.002 * input;
+    joint.qref += deltaq;
+    if (joint.qref > joint.upper_limit)
     {
-      qref = 0.0;
+      joint.qref = joint.upper_limit;
     }
-    else if (qref < -M_PI)
+    else if (joint.qref < joint.lower_limit)
     {
-      qref = -M_PI;
+      joint.qref = joint.lower_limit;
     }
     dqref = deltaq / timeStep;
   }
-  cameraT->u() = P * (qref - q) + D * (dqref - dq);
-  qprev = q;
+  joint.link->u() = P * (joint.qref - q) + D * (dqref - dq);
+  joint.qprev = q;
+}
+template <typename CameraT>
+void RTRQuadcopterController::controlFov(CameraData<CameraT>& camera){
+
   if (joy.axes[JoyAxis::DIR_PAD_H] > 0.25 )
   { //カメラの角度範囲（フォーカス）変更
-    fieldOfView += 0.004;
-    if (fieldOfView > 1.64)
+    camera.fov += 0.004;
+    if (camera.fov > 1.64)
     {
-      fieldOfView = 1.64;
+      camera.fov = 1.64;
     }
-    camera2->setFieldOfView(fieldOfView);
-    camera2->notifyStateChange();
+    camera.camera->setFieldOfView(camera.fov);
+    camera.camera->notifyStateChange();
   }
   if (joy.axes[JoyAxis::DIR_PAD_H] < -0.25 )
   {
-    fieldOfView -= 0.004;
-    if (fieldOfView < 0.002)
+    camera.fov -= 0.004;
+    if (camera.fov < 0.002)
     {
-      fieldOfView = 0.002;
+      camera.fov = 0.002;
     }
-    camera2->setFieldOfView(fieldOfView);
-    camera2->notifyStateChange();
+    camera.camera->setFieldOfView(camera.fov);
+    camera.camera->notifyStateChange();
   }
   if (joy.buttons[JoyButton::TRIANGLE] == 1)
   {
-    fieldOfView = 0.785398;
-    camera2->setFieldOfView(fieldOfView);
-    camera2->notifyStateChange();
+    camera.fov = 0.785398;
+    camera.camera->setFieldOfView(camera.fov);
+    camera.camera->notifyStateChange();
   }
-  return true;
 }
 
 bool RTRQuadcopterController::QRPositionCallback(rtr_msgs::QRPosition::Request &req, rtr_msgs::QRPosition::Response &res)
