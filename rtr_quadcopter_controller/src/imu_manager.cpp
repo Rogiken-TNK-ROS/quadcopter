@@ -129,4 +129,14 @@ void imu_manager::publish() {
   broadcaster_.sendTransform(tf);
 }
 
+void imu_manager::reset(){
+  filter.setOrientation(1, 0, 0, 0);
+  xyz = cnoid::Vector3::Zero();
+  dxyz = cnoid::Vector3::Zero();
+  ddxyz = cnoid::Vector3::Zero();
+  rpy = cnoid::Vector3::Zero();
+  drpy = cnoid::Vector3::Zero();
+  ddrpy = cnoid::Vector3::Zero();
+}
+
 }  // namespace imu

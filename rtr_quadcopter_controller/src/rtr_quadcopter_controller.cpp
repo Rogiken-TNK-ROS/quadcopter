@@ -457,6 +457,9 @@ bool RTRQuadcopterController::control()
   Vector4 force = Vector4::Zero();
   Vector4 torque = Vector4::Zero();
 
+  if(!rotorswitch){
+    imu_manager.reset();
+  }
   if (rotorswitch)
   { // ローターが回ってたら色々処理、ここがメイン
 
